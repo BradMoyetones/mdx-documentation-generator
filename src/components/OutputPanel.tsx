@@ -112,7 +112,7 @@ export default function OutputPanel({ mdxContent, isLoading, error }: OutputPane
           <TabsTrigger value="CodeMirror">CodeMirror</TabsTrigger>
           <TabsTrigger value="MonacoEditor">MonacoEditor</TabsTrigger>
         </TabsList>
-        <TabsContent value="CodeMirror">
+        <TabsContent value="CodeMirror" className="h-full w-full overflow-y-auto">
           <div className="h-full w-full">
             <CodeMirror
               value={mdxContent}
@@ -136,7 +136,7 @@ export default function OutputPanel({ mdxContent, isLoading, error }: OutputPane
             />
           </div>
         </TabsContent>
-        <TabsContent value="MonacoEditor">
+        <TabsContent value="MonacoEditor" className="h-full w-full overflow-y-auto">
           <div className="h-full w-full">
             <Editor
               height="100%"
