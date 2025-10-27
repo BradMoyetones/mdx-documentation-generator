@@ -192,17 +192,9 @@ export default function OutputPanel({ mdxContent, isLoading, error }: OutputPane
             />
           </div>
         </TabsContent>
-<<<<<<< HEAD:src/components/OutputPanel.tsx
-        <TabsContent value="Preview" className="h-full w-full overflow-y-auto p-4">
-          
-        </TabsContent>
-
-        
-=======
         <TabsContent value="Preview" className="h-full w-full overflow-y-auto bg-background p-4">
           <MDXPreview mdxContent={mdxContent} />
         </TabsContent>
->>>>>>> 0f6d015 (refactor: change to next.js framework, add fumadocs and suport to preview MDX):app/(app)/generator/components/OutputPanel.tsx
       </Tabs>
     )
   }

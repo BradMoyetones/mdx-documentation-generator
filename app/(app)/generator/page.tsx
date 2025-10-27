@@ -180,58 +180,6 @@ Para abordar estas problemáticas, se desarrolló una aplicación robusta que au
                 </Tabs>
             </div>
 
-<<<<<<< HEAD:src/App.tsx
-  return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <SiteHeader />
-
-      <main className="grow h-[calc(100vh-53px)]">
-        <div className="md:hidden h-full">
-          <Tabs defaultValue="input" className="h-full flex flex-col gap-0">
-            <TabsList className="w-full rounded-none border-b border-border bg-muted/50">
-              <TabsTrigger value="input" className="flex-1">
-                Input
-              </TabsTrigger>
-              <TabsTrigger value="output" className="flex-1">
-                Output
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="input" className="grow overflow-auto m-0">
-              <InputPanel
-                projectData={projectData}
-                setProjectData={setProjectData}
-                onGenerate={handleGenerate}
-                onClear={handleClear}
-                isLoading={isLoading}
-              />
-            </TabsContent>
-            <TabsContent value="output" className="grow overflow-auto m-0">
-              <OutputPanel mdxContent={generatedMdx} isLoading={isLoading} error={error} />
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        <div className="hidden md:block h-full">
-          <ResizablePanelGroup direction="horizontal" className="h-full">
-            <ResizablePanel defaultSize={45} minSize={30}>
-              <InputPanel
-                projectData={projectData}
-                setProjectData={setProjectData}
-                onGenerate={handleGenerate}
-                onClear={handleClear}
-                isLoading={isLoading}
-              />
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={55} minSize={30}>
-              <OutputPanel mdxContent={generatedMdx} isLoading={isLoading} error={error} />
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        </div>
-      </main>
-    </div>
-  )
-=======
             <div className="hidden md:block h-full">
                 <ResizablePanelGroup direction="horizontal" className="h-full">
                     <ResizablePanel defaultSize={45} minSize={30}>
@@ -251,5 +199,4 @@ Para abordar estas problemáticas, se desarrolló una aplicación robusta que au
             </div>
         </main>
     )
->>>>>>> 0f6d015 (refactor: change to next.js framework, add fumadocs and suport to preview MDX):app/(app)/generator/page.tsx
 }
