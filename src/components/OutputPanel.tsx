@@ -107,11 +107,14 @@ export default function OutputPanel({ mdxContent, isLoading, error }: OutputPane
     }
 
     return (
-      <Tabs defaultValue="CodeMirror" className="w-full h-full">
-        <TabsList>
-          <TabsTrigger value="CodeMirror">CodeMirror</TabsTrigger>
-          <TabsTrigger value="MonacoEditor">MonacoEditor</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="CodeMirror" className="w-full h-full gap-0">
+        <div className="p-2">
+          <TabsList>
+            <TabsTrigger value="CodeMirror">CodeMirror</TabsTrigger>
+            <TabsTrigger value="MonacoEditor">MonacoEditor</TabsTrigger>
+            <TabsTrigger value="Preview">Preview</TabsTrigger>
+          </TabsList>
+        </div>
         <TabsContent value="CodeMirror" className="h-full w-full overflow-y-auto">
           <div className="h-full w-full">
             <CodeMirror
@@ -140,7 +143,7 @@ export default function OutputPanel({ mdxContent, isLoading, error }: OutputPane
           <div className="h-full w-full">
             <Editor
               height="100%"
-              defaultLanguage="markdown"
+              defaultLanguage="mdx"
               value={mdxContent}
               theme={theme === "dark" ? "v0-dark" : "v0-light"}
               beforeMount={handleEditorWillMount}
@@ -188,6 +191,11 @@ export default function OutputPanel({ mdxContent, isLoading, error }: OutputPane
             />
           </div>
         </TabsContent>
+        <TabsContent value="Preview" className="h-full w-full overflow-y-auto p-4">
+          
+        </TabsContent>
+
+        
       </Tabs>
     )
   }

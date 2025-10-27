@@ -156,7 +156,7 @@ Para abordar estas problemáticas, se desarrolló una aplicación robusta que au
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <SiteHeader />
 
-      <main className="flex-grow h-[calc(100vh-53px)]">
+      <main className="grow h-[calc(100vh-53px)]">
         <div className="md:hidden h-full">
           <Tabs defaultValue="input" className="h-full flex flex-col gap-0">
             <TabsList className="w-full rounded-none border-b border-border bg-muted/50">
@@ -167,7 +167,7 @@ Para abordar estas problemáticas, se desarrolló una aplicación robusta que au
                 Output
               </TabsTrigger>
             </TabsList>
-            <TabsContent value="input" className="flex-grow overflow-auto m-0">
+            <TabsContent value="input" className="grow overflow-auto m-0">
               <InputPanel
                 projectData={projectData}
                 setProjectData={setProjectData}
@@ -176,7 +176,7 @@ Para abordar estas problemáticas, se desarrolló una aplicación robusta que au
                 isLoading={isLoading}
               />
             </TabsContent>
-            <TabsContent value="output" className="flex-grow overflow-auto m-0">
+            <TabsContent value="output" className="grow overflow-auto m-0">
               <OutputPanel mdxContent={generatedMdx} isLoading={isLoading} error={error} />
             </TabsContent>
           </Tabs>
