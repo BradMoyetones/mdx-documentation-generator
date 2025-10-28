@@ -109,23 +109,44 @@ Para abordar estas problemáticas, se desarrolló una aplicación robusta que au
 
 <Steps>
   <Step>Explorar la API</Step>
-  Conoce todos los endpoints disponibles en la <Link href="/almuerzos/docs/api">documentación de la API</Link>.
+  Conoce todos los endpoints disponibles en la <Link href="#">documentación de la API</Link>.
 
   <Step>Revisar el Frontend</Step>
-  Descubre la arquitectura y componentes del frontend en la <Link href="/almuerzos/docs/front-end">documentación del Frontend</Link>.
+  Descubre la arquitectura y componentes del frontend en la <Link href="#">documentación del Frontend</Link>.
 
   <Step>Guías de Usuario</Step>
   Consulta las guías específicas para cada rol de usuario en el sistema.
 </Steps>`)
     const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [isThinking, setIsThinking] = useState<boolean>(false)
     const [error, setError] = useState<string | null>(null)
 
     const handleGenerate = useCallback(async () => {
         setIsLoading(true)
+        setIsThinking(false)
         setError(null)
         setGeneratedMdx("")
+
         try {
-            const result = await generateMdxDocumentation(projectData)
+            const result = await generateMdxDocumentation(
+              projectData,
+              () => {
+                setIsThinking(true)
+              },
+              (chunk: string) => {
+                setIsThinking(false)
+                setGeneratedMdx((prev) => prev + chunk)
+              },
+              (fullContent: string) => {
+                setGeneratedMdx(fullContent)
+                setIsLoading(false)
+              },
+              (errorMsg: string) => {
+                setError(`An error occurred: ${errorMsg}`)
+                setIsLoading(false)
+                setIsThinking(false)
+              }
+            )
             setGeneratedMdx(result)
         } catch (e: unknown) {
             if (e instanceof Error) {
@@ -134,7 +155,8 @@ Para abordar estas problemáticas, se desarrolló una aplicación robusta que au
                 setError("An unknown error occurred.")
             }
         } finally {
-            setIsLoading(false)
+          setIsLoading(false)
+          setIsThinking(false)
         }
     }, [projectData])
 
@@ -175,7 +197,7 @@ Para abordar estas problemáticas, se desarrolló una aplicación robusta que au
                         />
                         </TabsContent>
                     <TabsContent value="output" className="grow overflow-auto m-0">
-                        <OutputPanel mdxContent={generatedMdx} isLoading={isLoading} error={error} />
+                        <OutputPanel mdxContent={generatedMdx} setMdxContent={setGeneratedMdx} isLoading={isLoading} isThinking={isThinking} error={error} />
                     </TabsContent>
                 </Tabs>
             </div>
@@ -193,7 +215,7 @@ Para abordar estas problemáticas, se desarrolló una aplicación robusta que au
                     </ResizablePanel>
                     <ResizableHandle withHandle />
                     <ResizablePanel defaultSize={55} minSize={30}>
-                      <OutputPanel mdxContent={generatedMdx} isLoading={isLoading} error={error} />
+                      <OutputPanel mdxContent={generatedMdx} setMdxContent={setGeneratedMdx} isLoading={isLoading} isThinking={isThinking} error={error} />
                     </ResizablePanel>
                 </ResizablePanelGroup>
             </div>

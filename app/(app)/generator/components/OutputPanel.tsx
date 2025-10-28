@@ -1,34 +1,47 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
-import CodeMirror from "@uiw/react-codemirror"
-import { markdown, markdownLanguage } from "@codemirror/lang-markdown"
-import { languages } from "@codemirror/language-data"
-import { dracula } from "@uiw/codemirror-theme-dracula"
-import { EditorView } from "@codemirror/view"
-
-import Editor from '@monaco-editor/react';
+import * as monaco from "monaco-editor"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 import type { Monaco } from "@monaco-editor/react"
 import { createV0Theme, createV0LightTheme } from "@/lib/monaco-theme"
 import { useTheme } from "next-themes"
-import { ClipboardIcon } from "lucide-react"
+import { Check, ClipboardIcon, Code2Icon, DownloadIcon, Eye, FileTextIcon } from "lucide-react"
 import { MDXPreview } from "./mdx-preview"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
+
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import { editor } from "monaco-editor"
+import { toast } from "sonner"
+import dynamic from "next/dynamic"
+
+const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false })
 
 interface OutputPanelProps {
   mdxContent: string
+  setMdxContent: React.Dispatch<React.SetStateAction<string>>
   isLoading: boolean
+  isThinking?: boolean
   error: string | null
 }
 
-export default function OutputPanel({ mdxContent, isLoading, error }: OutputPanelProps) {
+export default function OutputPanel({ mdxContent, setMdxContent, isLoading, isThinking, error }: OutputPanelProps) {
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle")
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
   const {theme} = useTheme()
 
   useEffect(() => {
@@ -43,14 +56,77 @@ export default function OutputPanel({ mdxContent, isLoading, error }: OutputPane
     setCopyStatus("copied")
   }
 
+  const handleDownload = () => {
+    const blob = new Blob([mdxContent], { type: "text/markdown" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "generated.mdx"
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   const handleEditorWillMount = (monaco: Monaco) => {
     // Define the custom v0 theme
     monaco.editor.defineTheme("v0-dark", createV0Theme())
     monaco.editor.defineTheme("v0-light", createV0LightTheme())
   }
 
+  function handleEditorDidMount(editor: any) {
+    editorRef.current = editor
+
+    editor.onDidChangeModelContent(() => {
+      const currentValue = editor.getValue()
+      // No actualices el estado aquí por cada letra
+    })
+
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+      const text = editor.getValue()
+      setMdxContent(text)
+      toast.success("Saved")
+    })
+  }
+
   const renderContent = () => {
-    if (isLoading) {
+    if (isThinking) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-center px-6">
+          <div className="max-w-md space-y-4">
+            <div className="relative w-16 h-16 mx-auto">
+              <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping"></div>
+              <div className="relative w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <svg
+                  className="w-8 h-8 text-primary animate-pulse"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-lg">AI is thinking...</h3>
+              <p className="text-sm text-muted-foreground">Analyzing your project and crafting documentation</p>
+            </div>
+            <div className="flex items-center justify-center gap-1">
+              <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+              <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+              <span className="w-2 h-2 bg-primary rounded-full animate-bounce"></span>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    if (isLoading && !mdxContent) {
       return (
         <div className="space-y-4 animate-pulse">
           <div className="h-8 bg-muted rounded w-1/2"></div>
@@ -108,91 +184,158 @@ export default function OutputPanel({ mdxContent, isLoading, error }: OutputPane
     }
 
     return (
-      <Tabs defaultValue="CodeMirror" className="w-full h-full gap-0">
-        <div className="p-2">
+      <Tabs defaultValue="MonacoEditor" className="w-full h-full gap-0">
+        <div className="p-2 flex items-center justify-between bg-background border-b">
           <TabsList>
-            <TabsTrigger value="CodeMirror">CodeMirror</TabsTrigger>
-            <TabsTrigger value="MonacoEditor">MonacoEditor</TabsTrigger>
-            <TabsTrigger value="Preview">Preview</TabsTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="MonacoEditor" asChild>
+                  <Button size={"icon-sm"} variant={"ghost"}>
+                    <Code2Icon /> <span className="sr-only">MonacoEditor</span>
+                  </Button>
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Code</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="Preview" asChild>
+                  <Button size={"icon-sm"} variant={"ghost"}>
+                    <Eye /> <span className="sr-only">Preview</span>
+                  </Button>
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Preview</p>
+              </TooltipContent>
+            </Tooltip>
           </TabsList>
+          {mdxContent && !isLoading && !error && (
+            <Badge variant="secondary" className="text-xs ml-2">
+              {mdxContent.split("\n").length} lines
+            </Badge>
+          )}
         </div>
-        <TabsContent value="CodeMirror" className="h-full w-full overflow-y-auto">
-          <div className="h-full w-full">
-            <CodeMirror
-              value={mdxContent}
-              height="100%"
-              theme={dracula}
-              extensions={[
-                markdown({ base: markdownLanguage, codeLanguages: languages }),
-                EditorView.lineWrapping, // Enable line wrapping for long lines
-              ]}
-              editable={false}
-              basicSetup={{
-                lineNumbers: true,
-                highlightActiveLineGutter: false,
-                highlightActiveLine: false,
-                foldGutter: true,
-                dropCursor: false,
-                allowMultipleSelections: false,
-                indentOnInput: false,
-              }}
-              className="text-sm"
-            />
-          </div>
-        </TabsContent>
         <TabsContent value="MonacoEditor" className="h-full w-full overflow-y-auto">
-          <div className="h-full w-full">
-            <Editor
-              height="100%"
-              defaultLanguage="mdx"
-              value={mdxContent}
-              theme={theme === "dark" ? "v0-dark" : "v0-light"}
-              beforeMount={handleEditorWillMount}
-              options={{
-                readOnly: true,
-                minimap: { enabled: true },
-                fontSize: 14,
-                fontFamily: "'Geist Mono', 'Fira Code', 'Consolas', monospace",
-                lineNumbers: "on",
-                renderLineHighlight: "all",
-                guides: {
-                  indentation: true,
-                  highlightActiveIndentation: true,
-                },
-                wordWrap: "on",
-                wrappingIndent: "same",
-                scrollBeyondLastLine: false,
-                automaticLayout: true,
-                padding: { top: 16, bottom: 16 },
-                renderWhitespace: "selection",
-                cursorBlinking: "smooth",
-                smoothScrolling: true,
-                folding: true,
-                foldingHighlight: true,
-                showFoldingControls: "mouseover",
-                bracketPairColorization: {
-                  enabled: true,
-                },
-                lineDecorationsWidth: 10,
-                lineNumbersMinChars: 3,
-                glyphMargin: false,
-                scrollbar: {
-                  vertical: "visible",
-                  horizontal: "visible",
-                  useShadows: false,
-                  verticalScrollbarSize: 10,
-                  horizontalScrollbarSize: 10,
-                },
-              }}
-              loading={
-                <div className="flex items-center justify-center h-full">
-                  <div className="animate-pulse text-muted-foreground">Loading editor...</div>
+          <ResizablePanelGroup direction="horizontal">
+            <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
+              <div className="h-full bg-background border-border">
+                <div className="p-3 border-b border-border">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Explorer</h3>
                 </div>
-              }
-            />
-          </div>
+                <div className="p-2">
+                  <button className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent/40 text-sm text-foreground transition-colors">
+                    <FileTextIcon className="w-4 h-4 text-primary shrink-0" />
+                    <span>generated.mdx</span>
+                  </button>
+                </div>
+              </div>
+            </ResizablePanel>
+
+            <ResizableHandle withHandle />
+
+            <ResizablePanel defaultSize={80}>
+              <div className="h-full flex flex-col">
+                <div className="py-1 px-2 border-b flex items-center justify-between bg-background">
+                  <Breadcrumb>
+                    <BreadcrumbList>
+                      <BreadcrumbItem>
+                        <BreadcrumbLink href="#" className="text-muted-foreground">
+                          docs
+                        </BreadcrumbLink>
+                      </BreadcrumbItem>
+                      <BreadcrumbSeparator />
+                      <BreadcrumbItem>
+                        <BreadcrumbPage className="font-medium">generated.mdx</BreadcrumbPage>
+                      </BreadcrumbItem>
+                    </BreadcrumbList>
+                  </Breadcrumb>
+                  <div className="flex items-center gap-1">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button onClick={handleCopy} variant="ghost" size="icon-sm">
+                          {copyStatus === "copied" ? <Check className="w-2 h-2" /> : <ClipboardIcon className="w-2 h-2" />}
+                          <span className="sr-only">Copy</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        <p>Copy</p>
+                      </TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button onClick={handleDownload} variant="ghost" size="icon-sm">
+                          <DownloadIcon className="w-2 h-2" />
+                          <span className="sr-only">Download</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        <p>Download</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </div>
+
+                <div className="flex-1">
+                  <MonacoEditor
+                    height="100%"
+                    defaultLanguage="mdx"
+                    defaultValue={mdxContent}
+                    theme={theme === "dark" ? "v0-dark" : "v0-light"}
+                    beforeMount={handleEditorWillMount}
+                    onMount={handleEditorDidMount}
+                    options={{
+                      readOnly: false,
+                      minimap: { enabled: true },
+                      fontSize: 14,
+                      fontFamily: "'Geist Mono', 'Fira Code', 'Consolas', monospace",
+                      lineNumbers: "on",
+                      renderLineHighlight: "all",
+                      guides: {
+                        indentation: true,
+                        highlightActiveIndentation: true,
+                      },
+                      wordWrap: "on",
+                      wrappingIndent: "same",
+                      scrollBeyondLastLine: false,
+                      automaticLayout: true,
+                      padding: { top: 16, bottom: 16 },
+                      renderWhitespace: "selection",
+                      cursorBlinking: "smooth",
+                      smoothScrolling: true,
+                      folding: true,
+                      foldingHighlight: true,
+                      showFoldingControls: "mouseover",
+                      bracketPairColorization: {
+                        enabled: true,
+                      },
+                      lineDecorationsWidth: 10,
+                      lineNumbersMinChars: 3,
+                      glyphMargin: false,
+                      scrollbar: {
+                        vertical: "visible",
+                        horizontal: "visible",
+                        useShadows: false,
+                        verticalScrollbarSize: 10,
+                        horizontalScrollbarSize: 10,
+                      },
+                    }}
+                    loading={
+                      <div className="flex items-center justify-center h-full">
+                        <div className="animate-pulse text-muted-foreground">Loading editor...</div>
+                      </div>
+                    }
+                  />
+                </div>
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </TabsContent>
-        <TabsContent value="Preview" className="h-full w-full overflow-y-auto bg-background p-4">
+        <TabsContent value="Preview" className="h-full w-full overflow-y-auto bg-background p-4 scroll-smooth">
           <MDXPreview mdxContent={mdxContent} />
         </TabsContent>
       </Tabs>
@@ -200,24 +343,7 @@ export default function OutputPanel({ mdxContent, isLoading, error }: OutputPane
   }
 
   return (
-    <div className="h-full flex flex-col bg-background">
-      <div className="px-6 py-2 border-b border-border flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold">Generated MDX</h2>
-          {mdxContent && !isLoading && !error && (
-            <Badge variant="secondary" className="text-xs">
-              {mdxContent.split("\n").length} lines
-            </Badge>
-          )}
-        </div>
-        {mdxContent && !isLoading && !error && (
-          <Button onClick={handleCopy} variant="outline" size="sm">
-            <ClipboardIcon className="w-4 h-4 mr-2" />
-            {copyStatus === "copied" ? "Copied!" : "Copy"}
-          </Button>
-        )}
-      </div>
-
+    <div className="h-full flex flex-col bg-background rounded-lg scale-[98%] border-2 justify-between">
       <div className="grow overflow-hidden bg-card">
         {renderContent()}
       </div>
