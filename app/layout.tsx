@@ -94,13 +94,13 @@ export default function RootLayout({
         )}
       >
         <ThemeProvider>
-            <LayoutProvider>
-              <ActiveThemeProvider>
-                {children}
-                <Toaster position="top-center" />
-                <Analytics />
-              </ActiveThemeProvider>
-            </LayoutProvider>
+          <LayoutProvider>
+            <ActiveThemeProvider>
+              {children}
+              <Toaster position="top-center" />
+              <Analytics />
+            </ActiveThemeProvider>
+          </LayoutProvider>
         </ThemeProvider>
       </body>
     </html>
